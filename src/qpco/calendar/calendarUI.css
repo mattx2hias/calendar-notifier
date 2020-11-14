@@ -1,0 +1,6 @@
+#monthYearLabel {
+    -fx-font-size: 40px;
+}
+#leftArrow, #rightArrow {
+    -fx-font-size: 30px;
+}
