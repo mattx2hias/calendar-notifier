@@ -7,10 +7,8 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.format.DateTimeFormatter;
-import java.time.format.TextStyle;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 
 public class CalendarNotifier extends Application {
@@ -34,16 +32,6 @@ public class CalendarNotifier extends Application {
 }
 
 class DateInfo {
-    String strMonth = getCurrentDate("MMMM");
-    int intYear = Integer.parseInt(getCurrentDate("YYYY"));
-    int intMonth = Integer.parseInt(this.getCurrentDate("MM"));
-
-    private String getCurrentDate(String format) {
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format);
-        LocalDate d = LocalDate.now();
-        return d.format(dtf);
-    }
-    protected String getMonth(int intMonth) {
-        return Month.of(intMonth).getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault());
-    }
+    Locale locale = Locale.getDefault();
+    Calendar c = new GregorianCalendar();
 }

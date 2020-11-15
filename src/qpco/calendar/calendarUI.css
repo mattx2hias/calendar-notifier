@@ -4,3 +4,10 @@
 #leftArrow, #rightArrow {
     -fx-font-size: 30px;
 }
+#dayNames {
+    -fx-font-size: 25px;
+}
+
+#dayGrid Button {
+    -fx-font-size: 30px;
+}

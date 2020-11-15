@@ -18,6 +18,35 @@
         <Label fx:id="monthYearLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.halignment="CENTER" />
         <Button fx:id="rightArrow" text="&#10145;" onAction="#changeMonth" GridPane.columnIndex="2" GridPane.rowIndex="0" GridPane.halignment="CENTER" />
     </GridPane>
+    <GridPane fx:id="dayNames">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+        </columnConstraints>
+        <Label text="Sunday" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+        <Label text="Monday" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+        <Label text="Tuesday" GridPane.columnIndex="2" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+        <Label text="Wednesday" GridPane.columnIndex="3" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+        <Label text="Thursday" GridPane.columnIndex="4" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+        <Label text="Friday" GridPane.columnIndex="5" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+        <Label text="Saturday" GridPane.columnIndex="6" GridPane.rowIndex="0" GridPane.halignment="CENTER"/>
+    </GridPane>
+    <GridPane fx:id="dayGrid">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+            <ColumnConstraints percentWidth="14.28"/>
+        </columnConstraints>
+    </GridPane>
     <stylesheets>
         <URL value="@calendarUI.css" />
     </stylesheets>
