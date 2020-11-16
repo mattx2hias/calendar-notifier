@@ -33,5 +33,8 @@ public class CalendarNotifier extends Application {
 
 class DateInfo {
     Locale locale = Locale.getDefault();
-    Calendar c = new GregorianCalendar();
+    Calendar currentCalendar = new GregorianCalendar();
+    int hour = currentCalendar.get(Calendar.HOUR);
+    int minute = currentCalendar.get(Calendar.MINUTE);
+    String ampm = currentCalendar.getDisplayName(Calendar.AM_PM, Calendar.LONG, locale);
 }

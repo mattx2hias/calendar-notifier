@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.*?>
 <?import java.net.URL?>
+
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="qpco.calendar.CalendarUIController"
@@ -47,6 +48,7 @@
             <ColumnConstraints percentWidth="14.28"/>
         </columnConstraints>
     </GridPane>
+    <HBox fx:id="notificationUI"/>
     <stylesheets>
         <URL value="@calendarUI.css" />
     </stylesheets>

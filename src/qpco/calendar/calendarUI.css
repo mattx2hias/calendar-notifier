@@ -1,13 +1,25 @@
 #monthYearLabel {
     -fx-font-size: 40px;
 }
+
 #leftArrow, #rightArrow {
     -fx-font-size: 30px;
 }
+
 #dayNames {
     -fx-font-size: 25px;
 }
 
 #dayGrid Button {
     -fx-font-size: 30px;
+    -fx-background-color: transparent;
 }
+
+#dayGrid Text {
+        -fx-font-size: 30px;
+}
+
+#notificationUI {
+    -fx-font-size: 20px;
+}
+
