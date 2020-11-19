@@ -15,6 +15,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Calendar;
 
 public class CalendarUIController {
@@ -26,9 +28,11 @@ public class CalendarUIController {
     @FXML Button rightArrow;
     @FXML GridPane dayGrid;
     @FXML HBox notificationUI = new HBox();
+    Button pressedButton;
+    HandleNotifications nh = new HandleNotifications();
 
     @FXML private void initialize() {
-        monthYearLabel.setText(di.currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, di.locale)
+        monthYearLabel.setText(di.currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, DateInfo.locale)
                 + " " + di.currentCalendar.get(Calendar.YEAR));
         currentDay = di.currentCalendar.get(Calendar.DAY_OF_MONTH);
         buildDayGrid();
@@ -37,12 +41,13 @@ public class CalendarUIController {
     @FXML private void changeMonth(ActionEvent e) {
         dayGrid.getChildren().clear();
         notificationUI.getChildren().clear();
+
         int amount = 0;
         amount = (e.getSource() == leftArrow) ? --amount : ++amount;
-        di.currentCalendar.add(Calendar.MONTH, amount);
+        DateInfo.updateCalendar.add(Calendar.MONTH, amount);
 
-        monthYearLabel.setText(di.currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, di.locale)
-                + " " + di.currentCalendar.get(Calendar.YEAR));
+        monthYearLabel.setText(DateInfo.updateCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, DateInfo.locale)
+                + " " + DateInfo.updateCalendar.get(Calendar.YEAR));
 
         buildDayGrid();
     }
@@ -75,7 +80,8 @@ public class CalendarUIController {
     }
 
     @FXML private void buildDayGrid() {
-        Calendar buildCalendar = (Calendar) di.currentCalendar.clone();
+
+        Calendar buildCalendar = (Calendar) DateInfo.updateCalendar.clone();
         int min = buildCalendar.getActualMinimum(Calendar.DAY_OF_MONTH);
         int max = buildCalendar.getActualMaximum(Calendar.DAY_OF_MONTH);
 
@@ -94,26 +100,46 @@ public class CalendarUIController {
         int col = buildCalendar.get(Calendar.DAY_OF_WEEK) - 1;
         int row = 0;
 
-        for(int i = min; i <= max; i++) {
-            Button b = new Button(Integer.toString(i));
+        for(int i = min-1; i < max; i++) {
+            nh.buttons[i] = new Button(Integer.toString(i+1));
+            Button b = nh.buttons[i];
+            b.setStyle("-fx-background-color: none");
+
             dayGrid.getChildren().add(b);
             GridPane.setColumnIndex(b, col);
             GridPane.setRowIndex(b, row);
             GridPane.setHalignment(b, HPos.CENTER);
             GridPane.setMargin(b, new Insets(10, 0, 10, 0));
             b.setOnAction(this::openNotificationUI);
+
             buildCalendar.add(Calendar.DAY_OF_MONTH,1);
-            if(currentDay==i) { b.setStyle("-fx-border-color: #039ED3"); } // add blue border to current day
+            if(currentDay == i && DateInfo.updateCalendar.get(Calendar.MONTH) == di.currentCalendar.get(Calendar.MONTH)) {
+                b.setStyle("-fx-border-color: #039ED3"); // add blue border to current day
+            }
             if(col==6) {
                 row++;
                 col=0;
             } else col++;
         }
+        try {
+            nh.readNotifications();
+        } catch (FileNotFoundException e1) {
+            System.out.println("File not found.");
+            e1.printStackTrace();
+        }
     }
 
-    @FXML private void openNotificationUI(ActionEvent e) {
+    @FXML void openNotificationUI(ActionEvent e) {
+        nh.updatedDate = DateInfo.updateCalendar.getTime();
+
+        if(pressedButton != null && pressedButton.getText().equals(Integer.toString(DateInfo.updateCalendar.get(Calendar.DAY_OF_MONTH)))){
+            pressedButton.setStyle("-fx-border-color: none");
+        }
         notificationUI.getChildren().clear();
         notificationUI.setAlignment(Pos.CENTER);
+        pressedButton = (Button)e.getSource();
+        pressedButton.setStyle("-fx-border-color: #039ED3");
+        DateInfo.updateCalendar.set(Calendar.DAY_OF_MONTH, (Integer.parseInt(pressedButton.getText())));
 
         // NOTIFICATION TEXT
         TextField notifText = new TextField("Enter notification text");
@@ -125,8 +151,11 @@ public class CalendarUIController {
         hourSelector.setValue(di.hour);
 
         // MINUTE
-        ChoiceBox<Integer> minuteSelector = new ChoiceBox<>();
-        for(int i = 1; i <= 60; i++) { minuteSelector.getItems().add(i); }
+        ChoiceBox<String> minuteSelector = new ChoiceBox<>();
+        for(int i = 0; i <= 59; i++) {
+            String s = String.format("%02d", i);
+            minuteSelector.getItems().add(s);
+        }
         minuteSelector.setValue(di.minute);
 
         // AMPM
@@ -140,6 +169,23 @@ public class CalendarUIController {
         repeatSelector.setValue("Once");
 
         Button saveButton = new Button("Save");
+        saveButton.setOnAction(e1 -> {
+            nh.notification = notifText.getCharacters().toString();
+            nh.hour = hourSelector.getValue();
+            nh.minute = minuteSelector.getValue();
+            nh.ampm = ampmSelector.getValue();
+            nh.repeat = repeatSelector.getValue();
+            Button b2 = (Button)e.getSource();
+            nh.day = Integer.parseInt(b2.getText());
+            DateInfo.updateCalendar.set(Calendar.DAY_OF_MONTH, nh.day);
+            nh.updatedDate = DateInfo.updateCalendar.getTime();
+            try {
+                nh.saveNotification();
+                nh.readNotifications();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
         notificationUI.getChildren().addAll(notifText, hourSelector, minuteSelector,ampmSelector,
                 repeatSelector, saveButton);
 
