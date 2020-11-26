@@ -49,6 +49,7 @@
         </columnConstraints>
     </GridPane>
     <HBox fx:id="notificationUI"/>
+    <VBox fx:id="notificationList"/>
     <stylesheets>
         <URL value="@calendarUI.css" />
     </stylesheets>
