@@ -6,10 +6,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -30,6 +27,7 @@ public class CalendarUIController {
     //@FXML private Button rightArrow;
     @FXML private GridPane dayGrid;
     @FXML HBox notificationUI;
+    @FXML HBox smsMessageBox;
     private Button pressedButton;
     HandleNotifications nh = new HandleNotifications();
 
@@ -82,10 +80,17 @@ public class CalendarUIController {
     }
 
     @FXML private void buildDayGrid() {
+        StageInfo.resetStageHeight();
 
         Calendar buildCalendar = (Calendar) DateInfo.updateCalendar.clone();
         int min = buildCalendar.getActualMinimum(Calendar.DAY_OF_MONTH);
         int max = buildCalendar.getActualMaximum(Calendar.DAY_OF_MONTH);
+        DateInfo.updateCalendar.set(Calendar.DAY_OF_MONTH, max);
+
+        // handle months with 6 weeks
+        if(DateInfo.updateCalendar.get(Calendar.WEEK_OF_MONTH) == 6) {
+            StageInfo.modifyStageHeight(75);
+        }
 
         buildCalendar.set(Calendar.DAY_OF_MONTH, max);
         if(buildCalendar.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY) {
@@ -115,7 +120,7 @@ public class CalendarUIController {
             b.setOnAction(this::openNotificationUI);
 
             buildCalendar.add(Calendar.DAY_OF_MONTH,1);
-            if(currentDay == i && DateInfo.updateCalendar.get(Calendar.MONTH) == di.currentCalendar.get(Calendar.MONTH)) {
+            if(currentDay-1 == i && DateInfo.updateCalendar.get(Calendar.MONTH) == di.currentCalendar.get(Calendar.MONTH)) {
                 b.setStyle("-fx-border-color: #039ED3"); // add blue border to current day
             }
             if(col==6) {
@@ -135,6 +140,8 @@ public class CalendarUIController {
     }
 
     @FXML private void openNotificationUI(ActionEvent e) {
+//        StageInfo.height += 25;
+//        StageInfo.pStage.setHeight(StageInfo.height);
         nh.updatedDate = DateInfo.updateCalendar.getTime();
         notificationList.getChildren().clear();
 
@@ -181,27 +188,52 @@ public class CalendarUIController {
         );
         repeatSelector.setValue("Once");
 
+        // NOTIFY OPTIONS
+
+        TextField smsMessageField = new TextField("Enter text message");
+        TextField phoneNumberField = new TextField("Enter phone number(s)");
+        smsMessageBox.setAlignment(Pos.CENTER_RIGHT);
+        HBox.setMargin(smsMessageField, new Insets(0, 10, 0, 0));
+        HBox.setMargin(phoneNumberField, new Insets(0, 50, 0, 0));
+        CheckBox smsCheck = new CheckBox("SMS");
+        smsCheck.setOnAction(e2 -> {
+            if(smsCheck.isSelected()) {
+                StageInfo.modifyStageHeight(25);
+                smsMessageBox.getChildren().addAll(smsMessageField, phoneNumberField);
+            } else {
+                StageInfo.height -= 25;
+                StageInfo.pStage.setHeight(StageInfo.height);
+                smsMessageBox.getChildren().clear();
+            }
+        });
+
+        CheckBox windowsCheck = new CheckBox("WIN10");
+
         Button saveButton = new Button("Save");
         saveButton.setOnAction(e1 -> {
+            SendSMS newSMS = new SendSMS();
             nh.notification = notifText.getCharacters().toString();
             nh.hour = hourSelector.getValue();
             nh.minute = minuteSelector.getValue();
             nh.ampm = ampmSelector.getValue();
             nh.repeat = repeatSelector.getValue();
+            newSMS.smsMessage = smsMessageField.getCharacters().toString();
+            newSMS.phoneNumbers.add(phoneNumberField.getCharacters().toString());
+
             Button b2 = (Button)e.getSource();
             nh.day = Integer.parseInt(b2.getText());
             DateInfo.updateCalendar.set(Calendar.DAY_OF_MONTH, nh.day);
             nh.updatedDate = DateInfo.updateCalendar.getTime();
             try {
                 notificationList.getChildren().clear();
-                nh.saveNotification();
+                nh.saveNotification(newSMS.smsMessage, newSMS.phoneNumbers);
                 nh.readNotifications(notificationList);
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
         });
         notificationUI.getChildren().addAll(notifText, hourSelector, minuteSelector,ampmSelector,
-                repeatSelector, saveButton);
+                repeatSelector, smsCheck, windowsCheck, saveButton);
 
         HBox.setMargin(notifText, new Insets(10, 5, 5, 5));
         HBox.setMargin(hourSelector, new Insets(10, 0, 5, 0));
