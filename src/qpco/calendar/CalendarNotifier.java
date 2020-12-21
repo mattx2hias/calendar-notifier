@@ -13,6 +13,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -21,6 +22,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
+import java.util.Timer;
 
 public class CalendarNotifier extends Application {
 
@@ -37,10 +40,67 @@ public class CalendarNotifier extends Application {
 
     public static void main(String[] args) throws RuntimeException {
         try{
+            BackgroundTasks bgt1 = new BackgroundTasks();
             launch(args);
         } catch (RuntimeException e) {
             e.printStackTrace();
         }
+    }
+}
+
+class BackgroundTasks {
+    Timer timer = new Timer();
+
+    /**
+     * Constructor creates new {@link TimerTask} that runs every 15 seconds.
+     * Compares current time to every notification time in the {@link HandleNotifications} notifMap.
+     */
+    BackgroundTasks() {
+        this.timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    notifTimeMatch(HandleNotifications.notifMap);
+                } catch (AWTException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 0, 15000);
+    }
+
+    /**
+     * Compares current time to parameterized time.
+     * <p>
+     * @param notifMap  -   map holds key(date and time), value(notification text) pair.
+     * @throws AWTException
+     */
+    void notifTimeMatch(Map<String, String> notifMap) throws AWTException {
+        String currentTime = new SimpleDateFormat(" MM-dd-yyyy").format(new Date()) + " at " + new SimpleDateFormat("h:mma").format(new Date());
+        for(Map.Entry<String, String> map : notifMap.entrySet()) {
+            if(map.getKey().equals(currentTime)) {
+                displayTray(map.getValue(), map.getKey()); // send notification text and date to system tray
+            }
+        }
+    }
+
+    /**
+     * Handles WIN10 notification popup.
+     * <p>
+     * @param notification  -   notification String.
+     * @param time  -   date and time String.
+     * @throws AWTException
+     */
+    public void displayTray(String notification, String time) throws AWTException {
+        SystemTray tray = SystemTray.getSystemTray();
+
+        Image image = Toolkit.getDefaultToolkit().createImage("icon.png");
+
+        TrayIcon trayIcon = new TrayIcon(image, "Tray Demo");
+        trayIcon.setImageAutoSize(true);
+        trayIcon.setToolTip("System tray icon demo");
+        tray.add(trayIcon);
+
+        trayIcon.displayMessage(notification, null, TrayIcon.MessageType.NONE);
     }
 }
 
@@ -59,18 +119,35 @@ class StageInfo {
     }
 }
 
-class DateInfo {
-    static Locale locale = Locale.getDefault();
+interface DateInfo {
+    Locale locale = Locale.getDefault();
     Calendar currentCalendar = new GregorianCalendar();
-    static Calendar updateCalendar = new GregorianCalendar(); // update when month/year changes
+    Calendar updateCalendar = new GregorianCalendar(); // update when month/year changes
     int hour = currentCalendar.get(Calendar.HOUR);
     String minute = String.format("%02d", currentCalendar.get(Calendar.MINUTE));
     String ampm = currentCalendar.getDisplayName(Calendar.AM_PM, Calendar.LONG, locale);
 }
 
 class SendSMS {
-    protected String smsMessage = null;
-    protected List<String> phoneNumbers = new ArrayList<>();
+    private String smsMessage = null;
+    private List<String> phoneNumbers = new ArrayList<>();
+
+    public String getSMSMessage() {
+        return smsMessage;
+    }
+
+    public List<String> getPhoneNumbers() {
+        return phoneNumbers;
+    }
+
+    public void setSMSMessage(String newMessage) {
+        this.smsMessage = newMessage;
+    }
+
+    public void addPhoneNumbers(String newNumbers) {
+        String[] numbers = newNumbers.split(" ");
+        this.phoneNumbers.addAll(Arrays.asList(numbers));
+    }
 }
 
 class HandleNotifications {
@@ -80,17 +157,17 @@ class HandleNotifications {
     Date updatedDate; // update when month/year changes, set to first day of new month
     int day, hour;
     Button[] buttons = new Button[31]; // buttons for day grid
-    HashMap<String, Button> notifListMap = new HashMap<>();
+    Map<String, Button> notifListMap = new HashMap<>();
 
-    // compare current time to parameterized time String
-    boolean notifTimeMatch(String notifTime) {
-        String currentTime = new SimpleDateFormat("MM-dd-yyyy at h:mma").format(new Date());
-        if(notifTime.equals(currentTime)) {
-            return true;
-        }
-        return false;
-    }
+    static Map<String, String> notifMap = new HashMap<>();
 
+    /**
+     * Writes new notifications to .txt repository.
+     * <p>
+     * @param smsMessage    -   String to be sent as a SMS message.
+     * @param phoneNumbers  -   List of phone numbers for the smsMessage String to be sent.
+     * @throws IOException
+     */
     void saveNotification(String smsMessage, List<String> phoneNumbers) throws IOException {
         System.out.println("Saving...");
         if(f.createNewFile()) {
@@ -104,14 +181,16 @@ class HandleNotifications {
             case "Weekly":  notifDate = "Weekly " + new SimpleDateFormat("MM-dd-yyyy").format(updatedDate);   break;
             case "Daily":   notifDate = "Daily " + new SimpleDateFormat("MM-dd-yyyy").format(updatedDate);    break;
         }
-        // notification text
-        // Once 1-1-2020 at 12:00AM
+
         String storedNotification;
-        if(smsMessage == null) { storedNotification = notification + "\n"
-                + notifDate + " at " + hour + ":" + minute + ampm + "\n\n"; }
-        else { // handle sms message
-            storedNotification = notification + "\n"
-                    + notifDate + " at " + hour + ":" + minute + ampm + "\n"
+        if(smsMessage.equals("Enter text message")) {
+            storedNotification =
+                    notifDate + " at " + hour + ":" + minute + ampm + "\n"
+                    + notification + "\n\n";
+        } else { // handle sms message
+            storedNotification =
+                    notifDate + " at " + hour + ":" + minute + ampm + "\n"
+                    + notification + "\n"
                     + "SMS: " + smsMessage + " Number(s): " + phoneNumbers + "\n\n";
         }
 
@@ -124,8 +203,11 @@ class HandleNotifications {
         }
     }
 
-    /*
-        @param notificationList     VBox to add list items to
+    /**
+     * Parses .txt repository, highlights days with notifications. Calls displayNotifications.
+     * <p>
+     * @param notificationList  -   VBox to add list items to.
+     * @throws IOException
      */
     void readNotifications(VBox notificationList) throws IOException {
         StageInfo.resetStageHeight();
@@ -133,7 +215,7 @@ class HandleNotifications {
             System.out.println("New File created at " + f.getAbsolutePath());
         }
         Scanner input;
-        String line, lineCopy, notification = null;
+        String line, lineCopy, notification = null, time = null;
         input = new Scanner(f);
         int month;
         String weekday;
@@ -145,14 +227,23 @@ class HandleNotifications {
 
             if(line.startsWith("Once") || line.startsWith("Yearly") || line.startsWith("Monthly") || line.startsWith("Weekly")) {
                 line = line.substring(line.indexOf(' '));
+                time = line;
+
                 month = Integer.parseInt(line.substring(1, 3)) - 1;
                 day = Integer.parseInt(line.substring(4, 6));
                 c.set(Calendar.MONTH, month);
                 c.set(Calendar.DAY_OF_MONTH, day);
                 weekday = c.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
 
-            } else {
+            } else if (line.isEmpty()) { continue; }
+            else {
                 notification = line;
+                //System.out.println("key: " + time + " value: " + notification);
+                notifMap.put(time, notification);
+                if(Integer.valueOf(DateInfo.updateCalendar.get(Calendar.DAY_OF_MONTH)).equals(day)) {
+                    if(!input.hasNextLine()) { break; }
+                    notificationList.getChildren().add(displayNotifications(notification));
+                }
                 continue;
             }
 
@@ -171,17 +262,18 @@ class HandleNotifications {
                     if(!input.hasNextLine()) { break; }
                     // add loop highlighting every weekday in a month
                     buttons[day-1].setStyle("-fx-background-color: #039ED3");
-                    notificationList.getChildren().add(displayNotifications(notification));
                     continue;
                 }
-            }
-            if(Integer.valueOf(DateInfo.updateCalendar.get(Calendar.DAY_OF_MONTH)).equals(day)) {
-                if(!input.hasNextLine()) { break; }
-                notificationList.getChildren().add(displayNotifications(notification));
             }
         }
     }
 
+    /**
+     * Adds new HBox with notification and delete Button to the notifListMap.
+     * <p>
+     * @param notification  -   notification text.
+     * @return  -   new HBox with notification and delete button.
+     */
     private HBox displayNotifications(String notification) {
         HBox notifListItem = new HBox();
         Button b = new Button("Delete");
@@ -194,6 +286,11 @@ class HandleNotifications {
         return notifListItem;
     }
 
+    /**
+     *  Writes everything but the specified notification to new temp file, renames temp file and deletes original.
+     *  <p>
+     * @param a -   delete Button press.
+     */
     private void deleteNotification(ActionEvent a) {
         File temp = new File(filePath + "\\temp.txt");
         Scanner input = null;
@@ -214,7 +311,7 @@ class HandleNotifications {
                             System.out.println(line); // date line
                             if(!input.hasNextLine()) { break; }
                             input.nextLine(); // SMS message line
-                            input.nextLine(); // blank line
+                            //input.nextLine(); // line spacer
                         } else {
                             try {
                                 line.append("\n");

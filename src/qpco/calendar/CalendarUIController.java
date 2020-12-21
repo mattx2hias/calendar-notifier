@@ -19,7 +19,6 @@ import java.util.Calendar;
 
 public class CalendarUIController {
     @FXML VBox notificationList;
-    DateInfo di = new DateInfo();
     private int currentDay;
 
     @FXML private Button leftArrow;
@@ -32,9 +31,9 @@ public class CalendarUIController {
     HandleNotifications nh = new HandleNotifications();
 
     @FXML private void initialize() {
-        monthYearLabel.setText(di.currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, DateInfo.locale)
-                + " " + di.currentCalendar.get(Calendar.YEAR));
-        currentDay = di.currentCalendar.get(Calendar.DAY_OF_MONTH);
+        monthYearLabel.setText(DateInfo.currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, DateInfo.locale)
+                + " " + DateInfo.currentCalendar.get(Calendar.YEAR));
+        currentDay = DateInfo.currentCalendar.get(Calendar.DAY_OF_MONTH);
         buildDayGrid();
     }
 
@@ -120,7 +119,7 @@ public class CalendarUIController {
             b.setOnAction(this::openNotificationUI);
 
             buildCalendar.add(Calendar.DAY_OF_MONTH,1);
-            if(currentDay-1 == i && DateInfo.updateCalendar.get(Calendar.MONTH) == di.currentCalendar.get(Calendar.MONTH)) {
+            if(currentDay-1 == i && DateInfo.updateCalendar.get(Calendar.MONTH) == DateInfo.currentCalendar.get(Calendar.MONTH)) {
                 b.setStyle("-fx-border-color: #039ED3"); // add blue border to current day
             }
             if(col==6) {
@@ -168,7 +167,7 @@ public class CalendarUIController {
         // HOUR
         ChoiceBox<Integer> hourSelector = new ChoiceBox<>();
         for (int i = 1; i <= 12; i++) { hourSelector.getItems().add(i); }
-        hourSelector.setValue(di.hour);
+        hourSelector.setValue(DateInfo.hour);
 
         // MINUTE
         ChoiceBox<String> minuteSelector = new ChoiceBox<>();
@@ -176,11 +175,11 @@ public class CalendarUIController {
             String s = String.format("%02d", i);
             minuteSelector.getItems().add(s);
         }
-        minuteSelector.setValue(di.minute);
+        minuteSelector.setValue(DateInfo.minute);
 
         // AMPM
         ChoiceBox<String> ampmSelector = new ChoiceBox<>(FXCollections.observableArrayList("AM", "PM"));
-        ampmSelector.setValue(di.ampm);
+        ampmSelector.setValue(DateInfo.ampm);
 
         // REPEAT
         ChoiceBox<String> repeatSelector = new ChoiceBox<>(FXCollections.observableArrayList(
@@ -217,8 +216,8 @@ public class CalendarUIController {
             nh.minute = minuteSelector.getValue();
             nh.ampm = ampmSelector.getValue();
             nh.repeat = repeatSelector.getValue();
-            newSMS.smsMessage = smsMessageField.getCharacters().toString();
-            newSMS.phoneNumbers.add(phoneNumberField.getCharacters().toString());
+            newSMS.setSMSMessage(smsMessageField.getCharacters().toString());
+            newSMS.addPhoneNumbers(phoneNumberField.getCharacters().toString());
 
             Button b2 = (Button)e.getSource();
             nh.day = Integer.parseInt(b2.getText());
@@ -226,7 +225,7 @@ public class CalendarUIController {
             nh.updatedDate = DateInfo.updateCalendar.getTime();
             try {
                 notificationList.getChildren().clear();
-                nh.saveNotification(newSMS.smsMessage, newSMS.phoneNumbers);
+                nh.saveNotification(newSMS.getSMSMessage(), newSMS.getPhoneNumbers());
                 nh.readNotifications(notificationList);
             } catch (IOException ioException) {
                 ioException.printStackTrace();
