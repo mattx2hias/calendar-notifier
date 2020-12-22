@@ -185,12 +185,10 @@ class HandleNotifications {
         String storedNotification;
         if(smsMessage.equals("Enter text message")) {
             storedNotification =
-                    notifDate + " at " + hour + ":" + minute + ampm + "\n"
-                    + notification + "\n\n";
+                    notifDate + " at " + hour + ":" + minute + ampm + ", " + notification + "\n\n";
         } else { // handle sms message
             storedNotification =
-                    notifDate + " at " + hour + ":" + minute + ampm + "\n"
-                    + notification + "\n"
+                    notifDate + " at " + hour + ":" + minute + ampm + ", " + notification + "\n"
                     + "SMS: " + smsMessage + " Number(s): " + phoneNumbers + "\n\n";
         }
 
@@ -215,7 +213,7 @@ class HandleNotifications {
             System.out.println("New File created at " + f.getAbsolutePath());
         }
         Scanner input;
-        String line, lineCopy, notification = null, time = null;
+        String line, lineCopy, notification, time;
         input = new Scanner(f);
         int month;
         String weekday;
@@ -224,27 +222,22 @@ class HandleNotifications {
         while(input.hasNextLine()) {
             line = input.nextLine();
             lineCopy = line;
+            if(line.isBlank()) { continue; }
+            line = line.substring(line.indexOf(' ')); // remove repeat word
+            month = Integer.parseInt(line.substring(1, 3)) - 1;
+            day = Integer.parseInt(line.substring(4, 6));
+            weekday = c.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
 
-            if(line.startsWith("Once") || line.startsWith("Yearly") || line.startsWith("Monthly") || line.startsWith("Weekly")) {
-                line = line.substring(line.indexOf(' '));
-                time = line;
+            c.set(Calendar.MONTH, month);
+            c.set(Calendar.DAY_OF_MONTH, day);
 
-                month = Integer.parseInt(line.substring(1, 3)) - 1;
-                day = Integer.parseInt(line.substring(4, 6));
-                c.set(Calendar.MONTH, month);
-                c.set(Calendar.DAY_OF_MONTH, day);
-                weekday = c.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
-
-            } else if (line.isEmpty()) { continue; }
-            else {
-                notification = line;
-                //System.out.println("key: " + time + " value: " + notification);
-                notifMap.put(time, notification);
-                if(Integer.valueOf(DateInfo.updateCalendar.get(Calendar.DAY_OF_MONTH)).equals(day)) {
-                    if(!input.hasNextLine()) { break; }
-                    notificationList.getChildren().add(displayNotifications(notification));
-                }
-                continue;
+            time = line.substring(0, line.indexOf(","));
+            notification = line.substring(line.indexOf(",")+2);
+            //System.out.println("key: " + time + " value: " + notification);
+            notifMap.put(line, notification);
+            if(Integer.valueOf(DateInfo.updateCalendar.get(Calendar.DAY_OF_MONTH)).equals(day)) {
+                if(!input.hasNextLine()) { break; }
+                notificationList.getChildren().add(displayNotifications(notification));
             }
 
             if(Integer.valueOf(DateInfo.updateCalendar.get(Calendar.MONTH)).equals(month)) {
@@ -262,7 +255,6 @@ class HandleNotifications {
                     if(!input.hasNextLine()) { break; }
                     // add loop highlighting every weekday in a month
                     buttons[day-1].setStyle("-fx-background-color: #039ED3");
-                    continue;
                 }
             }
         }
@@ -294,7 +286,7 @@ class HandleNotifications {
     private void deleteNotification(ActionEvent a) {
         File temp = new File(filePath + "\\temp.txt");
         Scanner input = null;
-        StringBuilder line;
+        String line, notification;
         Button b = (Button)a.getSource();
         try {
             if(temp.createNewFile()) { System.out.println("New File created at " + temp.getAbsolutePath()); }
@@ -302,21 +294,24 @@ class HandleNotifications {
         try {
             input = new Scanner(f);
             while(input.hasNextLine()) {
-                line = new StringBuilder(input.nextLine());
+                line = input.nextLine();
+                if(line.isBlank()) {
+                    line = "\n\n";
+                    Files.write(Paths.get(temp.getAbsolutePath()), line.getBytes(), StandardOpenOption.APPEND);
+                    continue;
+                }
+                notification = line.substring(line.indexOf(',')+2);
                 for(Map.Entry<String, Button> map : notifListMap.entrySet()) {
                     if(b.equals(map.getValue())) { // if button pressed equals button in map
-                        if(line.toString().equals(map.getKey())) {
-                            System.out.println("Deleted: " + line); // notification line
-                            line = new StringBuilder("Deleted: " + input.nextLine());
-                            System.out.println(line); // date line
+                        if(notification.equals(map.getKey())) {
+                            System.out.println("\nDeleted: " + line);
                             if(!input.hasNextLine()) { break; }
-                            input.nextLine(); // SMS message line
-                            //input.nextLine(); // line spacer
+                            input.nextLine();
+                            // handle SMS line
                         } else {
                             try {
-                                line.append("\n");
-                                System.out.print("Saved: " + line);
-                                Files.write(Paths.get(temp.getAbsolutePath()), line.toString().getBytes(), StandardOpenOption.APPEND);
+                                System.out.print("\nSaved: " + line);
+                                Files.write(Paths.get(temp.getAbsolutePath()), line.getBytes(), StandardOpenOption.APPEND);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -324,14 +319,14 @@ class HandleNotifications {
                     }
                 }
             }
-        } catch (FileNotFoundException fileNotFoundException) {
+        } catch (IOException fileNotFoundException) {
             fileNotFoundException.printStackTrace();
         } finally {
             assert input != null;
             input.close();
         }
         boolean delete = f.delete();
-        if(delete) { System.out.println("original file deleted"); }
+        if(delete) { System.out.println("\noriginal file deleted"); }
         boolean rename = temp.renameTo(f);
         if(rename) { System.out.println("temp file renamed"); }
     }
