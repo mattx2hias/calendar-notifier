@@ -6,24 +6,23 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.scene.control.Button; // ??
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.*;
 import java.util.List;
 import java.util.Timer;
+import java.util.*;
 
 public class CalendarNotifier extends Application {
 
@@ -40,7 +39,7 @@ public class CalendarNotifier extends Application {
 
     public static void main(String[] args) throws RuntimeException {
         try{
-            BackgroundTasks bgt1 = new BackgroundTasks();
+            new BackgroundTasks();
             launch(args);
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -71,14 +70,14 @@ class BackgroundTasks {
     /**
      * Compares current time to parameterized time.
      * <p>
-     * @param notifMap  -   map holds key(date and time), value(notification text) pair.
-     * @throws AWTException
+     * @param notifMap      -   map holds key(date and time), value(notification text) pair.
+     * @throws AWTException -   from displayTray method.
      */
     void notifTimeMatch(Map<String, String> notifMap) throws AWTException {
         String currentTime = new SimpleDateFormat(" MM-dd-yyyy").format(new Date()) + " at " + new SimpleDateFormat("h:mma").format(new Date());
         for(Map.Entry<String, String> map : notifMap.entrySet()) {
             if(map.getKey().equals(currentTime)) {
-                displayTray(map.getValue(), map.getKey()); // send notification text and date to system tray
+                displayTray(map.getValue()); // send notification text and date to system tray
             }
         }
     }
@@ -87,10 +86,9 @@ class BackgroundTasks {
      * Handles WIN10 notification popup.
      * <p>
      * @param notification  -   notification String.
-     * @param time  -   date and time String.
-     * @throws AWTException
+     * @throws AWTException -   handles SystemTray.
      */
-    public void displayTray(String notification, String time) throws AWTException {
+    public void displayTray(String notification) throws AWTException {
         SystemTray tray = SystemTray.getSystemTray();
 
         Image image = Toolkit.getDefaultToolkit().createImage("icon.png");
@@ -130,7 +128,7 @@ interface DateInfo {
 
 class SendSMS {
     private String smsMessage = null;
-    private List<String> phoneNumbers = new ArrayList<>();
+    private final List<String> phoneNumbers = new ArrayList<>();
 
     public String getSMSMessage() {
         return smsMessage;
@@ -166,7 +164,7 @@ class HandleNotifications {
      * <p>
      * @param smsMessage    -   String to be sent as a SMS message.
      * @param phoneNumbers  -   List of phone numbers for the smsMessage String to be sent.
-     * @throws IOException
+     * @throws IOException  -
      */
     void saveNotification(String smsMessage, List<String> phoneNumbers) throws IOException {
         System.out.println("Saving...");
@@ -205,7 +203,7 @@ class HandleNotifications {
      * Parses .txt repository, highlights days with notifications. Calls displayNotifications.
      * <p>
      * @param notificationList  -   VBox to add list items to.
-     * @throws IOException
+     * @throws IOException      -
      */
     void readNotifications(VBox notificationList) throws IOException {
         StageInfo.resetStageHeight();
@@ -213,7 +211,8 @@ class HandleNotifications {
             System.out.println("New File created at " + f.getAbsolutePath());
         }
         Scanner input;
-        String line, lineCopy, notification, time;
+        String line, lineCopy, notification;
+        //String time;
         input = new Scanner(f);
         int month;
         String weekday;
@@ -231,7 +230,7 @@ class HandleNotifications {
             c.set(Calendar.MONTH, month);
             c.set(Calendar.DAY_OF_MONTH, day);
 
-            time = line.substring(0, line.indexOf(","));
+            //time = line.substring(0, line.indexOf(","));
             notification = line.substring(line.indexOf(",")+2);
             //System.out.println("key: " + time + " value: " + notification);
             notifMap.put(line, notification);
@@ -264,7 +263,7 @@ class HandleNotifications {
      * Adds new HBox with notification and delete Button to the notifListMap.
      * <p>
      * @param notification  -   notification text.
-     * @return  -   new HBox with notification and delete button.
+     * @return              -   new HBox with notification and delete button.
      */
     private HBox displayNotifications(String notification) {
         HBox notifListItem = new HBox();
