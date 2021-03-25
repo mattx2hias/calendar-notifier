@@ -5,10 +5,9 @@
 <?import javafx.scene.layout.*?>
 <?import java.net.URL?>
 
-<?import javafx.scene.control.TextField?>
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
-      fx:controller="qpco.calendar.CalendarUIController"
+      fx:controller="main.java.CalendarGUI"
       prefHeight="400.0" prefWidth="600.0">
     <GridPane>
         <columnConstraints>
@@ -54,7 +53,7 @@
     <HBox fx:id="smsMessageBox"/>
     <VBox fx:id="notificationList"/>
     <stylesheets>
-        <URL value="@calendarUI.css" />
+        <URL value="@Calendar.css" />
     </stylesheets>
 </VBox>
 

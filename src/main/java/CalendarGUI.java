@@ -1,4 +1,4 @@
-package qpco.calendar;
+package main.java;
 
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -16,8 +16,19 @@ import javafx.scene.text.Text;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
 
-public class CalendarUIController {
+interface DateInfo {
+    Locale locale = Locale.getDefault();
+    Calendar currentCalendar = new GregorianCalendar();
+    Calendar updateCalendar = new GregorianCalendar(); // update when month/year changes
+    int hour = currentCalendar.get(Calendar.HOUR);
+    String minute = String.format("%02d", currentCalendar.get(Calendar.MINUTE));
+    String ampm = currentCalendar.getDisplayName(Calendar.AM_PM, Calendar.LONG, locale);
+}
+
+public class CalendarGUI {
     @FXML VBox notificationList;
     private int currentDay;
 
@@ -187,52 +198,28 @@ public class CalendarUIController {
         );
         repeatSelector.setValue("Once");
 
-        // NOTIFY OPTIONS
-
-        TextField smsMessageField = new TextField("Enter text message");
-        TextField phoneNumberField = new TextField("Enter phone number(s)");
-        smsMessageBox.setAlignment(Pos.CENTER_RIGHT);
-        HBox.setMargin(smsMessageField, new Insets(0, 10, 0, 0));
-        HBox.setMargin(phoneNumberField, new Insets(0, 50, 0, 0));
-        CheckBox smsCheck = new CheckBox("SMS");
-        smsCheck.setOnAction(e2 -> {
-            if(smsCheck.isSelected()) {
-                StageInfo.modifyStageHeight(25);
-                smsMessageBox.getChildren().addAll(smsMessageField, phoneNumberField);
-            } else {
-                StageInfo.height -= 25;
-                StageInfo.pStage.setHeight(StageInfo.height);
-                smsMessageBox.getChildren().clear();
-            }
-        });
-
-        CheckBox windowsCheck = new CheckBox("WIN10");
-
         Button saveButton = new Button("Save");
         saveButton.setOnAction(e1 -> {
-            SendSMS newSMS = new SendSMS();
             nh.notification = notifText.getCharacters().toString();
             nh.hour = hourSelector.getValue();
             nh.minute = minuteSelector.getValue();
             nh.ampm = ampmSelector.getValue();
             nh.repeat = repeatSelector.getValue();
-            newSMS.setSMSMessage(smsMessageField.getCharacters().toString());
-            newSMS.addPhoneNumbers(phoneNumberField.getCharacters().toString());
 
             Button b2 = (Button)e.getSource();
             nh.day = Integer.parseInt(b2.getText());
             DateInfo.updateCalendar.set(Calendar.DAY_OF_MONTH, nh.day);
             nh.updatedDate = DateInfo.updateCalendar.getTime();
             try {
+                nh.saveNotification();
                 notificationList.getChildren().clear();
-                nh.saveNotification(newSMS.getSMSMessage(), newSMS.getPhoneNumbers());
                 nh.readNotifications(notificationList);
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
         });
         notificationUI.getChildren().addAll(notifText, hourSelector, minuteSelector,ampmSelector,
-                repeatSelector, smsCheck, windowsCheck, saveButton);
+                repeatSelector, saveButton);
 
         HBox.setMargin(notifText, new Insets(10, 5, 5, 5));
         HBox.setMargin(hourSelector, new Insets(10, 0, 5, 0));
